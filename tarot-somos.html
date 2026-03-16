@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SOMOS · Tarot</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold:   #c9a84c;
+  --gold2:  #f0d080;
+  --deep:   #0a0612;
+  --purple: #2a1045;
+  --mid:    #150828;
+  --accent: #7b3fa0;
+  --rose:   #c86080;
+  --teal:   #3a8a8a;
+  --text:   #e8dcc8;
+  --muted:  rgba(200,180,140,0.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--deep);
+  font-family:'EB Garamond',serif;user-select:none;color:var(--text);}
+
+/* ── STARFIELD ── */
+#stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--t) ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:var(--a);transform:scale(1);}50%{opacity:calc(var(--a)*0.3);transform:scale(0.7);}}
+
+/* ── APP ── */
+#app{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;
+  align-items:center;overflow-y:auto;overflow-x:hidden;padding-bottom:30px;}
+#app::-webkit-scrollbar{width:3px;}
+#app::-webkit-scrollbar-thumb{background:rgba(200,168,80,0.2);border-radius:2px;}
+
+/* ── HEADER ── */
+#header{width:100%;max-width:500px;text-align:center;padding:24px 16px 10px;flex-shrink:0;}
+#header h1{
+  font-family:'Cinzel Decorative',serif;font-size:clamp(20px,6vw,32px);
+  font-weight:900;letter-spacing:3px;line-height:1.1;
+  background:linear-gradient(180deg,#f0d080 0%,#c9a84c 40%,#8a6020 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px rgba(200,160,60,0.4));
+}
+#header p{font-size:clamp(12px,3vw,15px);color:var(--muted);font-style:italic;
+  letter-spacing:1px;margin-top:4px;}
+.ornament{color:var(--gold);font-size:16px;letter-spacing:6px;margin:6px 0;opacity:0.6;}
+
+/* ── SPREAD SELECTOR ── */
+#spreads{display:flex;gap:6px;padding:0 16px;max-width:500px;width:100%;flex-wrap:wrap;justify-content:center;}
+.spread-btn{
+  padding:6px 14px;border-radius:20px;cursor:pointer;font-family:'Cinzel',serif;
+  font-size:clamp(9px,2.5vw,11px);letter-spacing:1px;font-weight:600;
+  border:1px solid rgba(200,168,80,0.3);background:rgba(200,168,80,0.06);
+  color:var(--muted);transition:all 0.2s;
+}
+.spread-btn:hover{border-color:rgba(200,168,80,0.6);color:var(--gold);}
+.spread-btn.active{border-color:var(--gold);background:rgba(200,168,80,0.15);color:var(--gold2);
+  box-shadow:0 0 12px rgba(200,168,80,0.2);}
+
+/* ── QUESTION BOX ── */
+#question-wrap{width:100%;max-width:460px;padding:10px 16px;}
+#question{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(200,168,80,0.2);
+  border-radius:12px;color:var(--text);font-family:'EB Garamond',serif;font-style:italic;
+  font-size:clamp(13px,3.5vw,16px);padding:10px 16px;outline:none;resize:none;
+  transition:border-color 0.2s;line-height:1.5;
+}
+#question::placeholder{color:rgba(200,180,140,0.3);}
+#question:focus{border-color:rgba(200,168,80,0.5);}
+
+/* ── SHUFFLE BTN ── */
+#shuffle-wrap{display:flex;justify-content:center;padding:10px 16px;}
+#shuffleBtn{
+  position:relative;padding:13px 36px;border-radius:50px;cursor:pointer;
+  font-family:'Cinzel',serif;font-size:clamp(11px,3vw,14px);font-weight:700;
+  letter-spacing:2px;border:none;overflow:hidden;
+  background:linear-gradient(135deg,#2a1045,#4a1a70,#2a1045);
+  color:var(--gold2);
+  box-shadow:0 0 30px rgba(120,50,180,0.4),0 0 0 1px rgba(200,168,80,0.3);
+  transition:all 0.2s;
+}
+#shuffleBtn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 30%,rgba(200,168,80,0.12) 50%,transparent 70%);
+  transform:translateX(-100%);transition:transform 0.6s;
+}
+#shuffleBtn:hover::before{transform:translateX(100%);}
+#shuffleBtn:hover{box-shadow:0 0 40px rgba(120,50,180,0.6),0 0 0 1px rgba(200,168,80,0.6);}
+#shuffleBtn:active{transform:scale(0.97);}
+
+/* ── CARD STAGE ── */
+#stage{
+  width:100%;max-width:520px;padding:10px 12px;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:10px;
+  min-height:220px;
+}
+
+/* ── CARD ── */
+.card-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  animation:cardReveal 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes cardReveal{
+  0%{opacity:0;transform:translateY(40px) rotateY(90deg) scale(0.8);}
+  100%{opacity:1;transform:translateY(0) rotateY(0) scale(1);}
+}
+.card-pos-label{
+  font-family:'Cinzel',serif;font-size:clamp(8px,2vw,10px);
+  color:var(--muted);letter-spacing:2px;text-transform:uppercase;
+}
+.card{
+  position:relative;border-radius:10px;overflow:hidden;cursor:pointer;
+  transition:transform 0.3s,box-shadow 0.3s;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6),0 0 0 1px rgba(200,168,80,0.2);
+}
+.card:hover{transform:translateY(-6px) scale(1.03);
+  box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 20px rgba(200,168,80,0.25);}
+.card.reversed{transform:rotate(180deg);}
+.card.reversed:hover{transform:rotate(180deg) translateY(6px) scale(1.03);}
+.card canvas{display:block;}
+
+.card-name{
+  font-family:'Cinzel',serif;font-size:clamp(8px,2.2vw,11px);
+  color:var(--gold);letter-spacing:1px;text-align:center;max-width:90px;
+  line-height:1.2;
+}
+.card-rev-tag{
+  font-size:clamp(7px,1.8vw,9px);color:var(--rose);letter-spacing:1px;
+  font-family:'Cinzel',serif;
+}
+
+/* ── READING PANEL ── */
+#reading{
+  width:100%;max-width:500px;padding:0 16px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.reading-card{
+  background:rgba(42,16,69,0.5);border:1px solid rgba(200,168,80,0.15);
+  border-radius:14px;padding:16px 18px;
+  animation:fadeUp 0.5s ease both;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.rc-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.rc-num{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:11px;font-weight:700;
+  background:rgba(200,168,80,0.15);border:1px solid rgba(200,168,80,0.3);
+  color:var(--gold);
+}
+.rc-title{font-family:'Cinzel',serif;font-size:clamp(11px,3vw,14px);
+  color:var(--gold2);letter-spacing:1px;}
+.rc-sub{font-size:clamp(9px,2.2vw,11px);color:var(--muted);font-style:italic;}
+.rc-text{font-size:clamp(13px,3.5vw,15px);line-height:1.7;color:var(--text);font-style:italic;}
+
+/* ── SYNTHESIS ── */
+#synthesis{
+  width:100%;max-width:500px;padding:0 16px;
+  animation:fadeUp 0.6s ease 0.3s both;
+}
+.synth-box{
+  background:linear-gradient(135deg,rgba(42,16,69,0.7),rgba(10,6,18,0.7));
+  border:1px solid rgba(200,168,80,0.25);border-radius:16px;padding:20px;
+  text-align:center;position:relative;overflow:hidden;
+}
+.synth-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(200,168,80,0.5),transparent);
+}
+.synth-title{font-family:'Cinzel Decorative',serif;font-size:clamp(11px,3vw,14px);
+  color:var(--gold);letter-spacing:2px;margin-bottom:10px;}
+.synth-text{font-size:clamp(13px,3.5vw,15px);line-height:1.8;font-style:italic;color:var(--text);}
+
+/* ── LOADER ── */
+#loader{
+  display:none;position:fixed;inset:0;z-index:50;
+  background:rgba(10,6,18,0.85);backdrop-filter:blur(8px);
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;
+}
+#loader.show{display:flex;}
+.crystal-spin{
+  width:60px;height:60px;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--gold);border-right-color:var(--accent);
+  animation:spin 1.2s linear infinite;
+  box-shadow:0 0 20px rgba(200,168,80,0.3);
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loader-text{font-family:'Cinzel',serif;font-size:13px;color:var(--muted);
+  letter-spacing:2px;animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
+
+/* ── MODAL ── */
+#modal{
+  display:none;position:fixed;inset:0;z-index:60;
+  background:rgba(10,6,18,0.92);backdrop-filter:blur(10px);
+  align-items:center;justify-content:center;padding:16px;
+}
+#modal.show{display:flex;}
+#modal-inner{
+  background:linear-gradient(145deg,#1a0830,#0e0520);
+  border:1px solid rgba(200,168,80,0.3);border-radius:20px;
+  padding:24px;max-width:380px;width:100%;max-height:85vh;overflow-y:auto;
+  position:relative;box-shadow:0 0 60px rgba(120,50,180,0.3);
+}
+#modal-inner::-webkit-scrollbar{width:3px;}
+#modal-inner::-webkit-scrollbar-thumb{background:rgba(200,168,80,0.2);}
+#modal-close{
+  position:absolute;top:12px;right:14px;width:28px;height:28px;
+  border-radius:50%;background:rgba(200,168,80,0.1);border:1px solid rgba(200,168,80,0.2);
+  color:var(--gold);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+#modal-card-img{display:block;margin:0 auto 16px;border-radius:8px;
+  box-shadow:0 0 30px rgba(200,168,80,0.2);}
+#modal-name{font-family:'Cinzel Decorative',serif;font-size:clamp(14px,4vw,18px);
+  color:var(--gold2);text-align:center;margin-bottom:4px;}
+#modal-arcana{font-family:'Cinzel',serif;font-size:11px;color:var(--muted);
+  text-align:center;letter-spacing:2px;margin-bottom:14px;}
+#modal-keywords{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-bottom:14px;}
+.mkw{padding:3px 10px;border-radius:12px;font-size:10px;
+  font-family:'Cinzel',serif;letter-spacing:1px;
+  background:rgba(200,168,80,0.1);border:1px solid rgba(200,168,80,0.2);color:var(--gold);}
+#modal-meaning{font-size:clamp(13px,3.5vw,15px);line-height:1.7;
+  color:var(--text);font-style:italic;text-align:center;}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div id="app">
+  <div id="header">
+    <div class="ornament">✦ ✦ ✦</div>
+    <h1>TAROT</h1>
+    <p>Consulta el oráculo · Escucha tu intuición</p>
+    <div class="ornament">✧ ✧ ✧</div>
+  </div>
+
+  <div id="spreads">
+    <button class="spread-btn active" data-spread="1">✦ Una carta</button>
+    <button class="spread-btn" data-spread="3">☽ Pasado · Presente · Futuro</button>
+    <button class="spread-btn" data-spread="5">⬟ Cruz Celta</button>
+    <button class="spread-btn" data-spread="7">★ Semana</button>
+  </div>
+
+  <div id="question-wrap">
+    <textarea id="question" rows="2"
+      placeholder="¿Qué pregunta llevas en el corazón?"></textarea>
+  </div>
+
+  <div id="shuffle-wrap">
+    <button id="shuffleBtn">🔮 REVELAR EL ORÁCULO</button>
+  </div>
+
+  <div id="stage"></div>
+  <div id="reading"></div>
+  <div id="synthesis"></div>
+</div>
+
+<div id="loader">
+  <div class="crystal-spin"></div>
+  <div class="loader-text">El velo se abre...</div>
+</div>
+
+<div id="modal">
+  <div id="modal-inner">
+    <div id="modal-close">✕</div>
+    <canvas id="modal-card-img" width="120" height="210"></canvas>
+    <div id="modal-name"></div>
+    <div id="modal-arcana"></div>
+    <div id="modal-keywords"></div>
+    <div id="modal-meaning"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// TAROT DATABASE — 22 Major + 8 representative Minor Arcana
+// ══════════════════════════════════════════════════════════
+const CARDS = [
+  // MAJOR ARCANA
+  {id:0,  name:'El Loco',       arcana:'Arcano Mayor · 0',
+   symbol:'☽',color:'#7ab8c8',color2:'#c8e8f0',
+   keywords:['Libertad','Espontaneidad','Nuevo comienzo','Fe'],
+   upright:'Un espíritu libre que da el salto sin mirar al abismo. La vida te llama hacia lo desconocido con promesas de aventura. Confía en el universo, suelta el control y abraza la maravillosa incertidumbre del camino que no tiene mapa.',
+   reversed:'El miedo al ridículo te paraliza. Impulsividad sin dirección dispersa tu energía. ¿Qué parte de ti sabe exactamente qué camino tomar, pero se niega a dar el primer paso?'},
+  {id:1,  name:'El Mago',       arcana:'Arcano Mayor · I',
+   symbol:'☿',color:'#e8a830',color2:'#f8d870',
+   keywords:['Voluntad','Manifestación','Habilidad','Poder'],
+   upright:'Tienes todos los elementos a tu disposición: fuego de voluntad, agua de emoción, aire de mente, tierra de cuerpo. Es el momento perfecto de manifestar. Tu intención es la varita, el universo es tu lienzo.',
+   reversed:'Manipulación, uso inadecuado del talento o inseguridad sobre tus propias capacidades. El mago existe en ti — ¿por qué dudas de su poder?'},
+  {id:2,  name:'La Sacerdotisa',arcana:'Arcano Mayor · II',
+   symbol:'☽',color:'#6080c8',color2:'#a8c0f0',
+   keywords:['Intuición','Misterio','Sabiduría interior','Paciencia'],
+   upright:'Lo que buscas no está afuera sino en las profundidades silenciosas de tu propio ser. El conocimiento más valioso espera entre sueños y presentimientos. Escucha más, habla menos. La luna ilumina lo que el sol oculta.',
+   reversed:'Secretos guardados que te pesan, desconexión de tu voz interior. La respuesta que buscas en otros ya la tienes tú.'},
+  {id:3,  name:'La Emperatriz', arcana:'Arcano Mayor · III',
+   symbol:'♀',color:'#60a860',color2:'#a8d8a8',
+   keywords:['Abundancia','Fertilidad','Naturaleza','Sensualidad'],
+   upright:'La madre cósmica te rodea de abundancia y belleza. Es tiempo de nutrir tus proyectos, tu cuerpo y tus relaciones. La creatividad fluye como un río desbordado. Permítete recibir el placer de estar vivo.',
+   reversed:'Descuido del cuerpo y la naturaleza. Dependencia emocional o creatividad bloqueada. ¿Cuándo fue la última vez que te diste permiso de florecer?'},
+  {id:4,  name:'El Emperador',  arcana:'Arcano Mayor · IV',
+   symbol:'♂',color:'#c85030',color2:'#e89080',
+   keywords:['Autoridad','Estructura','Control','Logro'],
+   upright:'El momento requiere disciplina, liderazgo y estructura firme. Eres el arquitecto de tu destino. Establece límites claros, crea sistemas sólidos y ejerce tu autoridad con sabiduría compasiva.',
+   reversed:'Autoritarismo, rigidez excesiva o incapacidad para asumir responsabilidad. ¿Gobiernas con mano de hierro lo que pide ser gobernado con corazón abierto?'},
+  {id:5,  name:'El Hierofante', arcana:'Arcano Mayor · V',
+   symbol:'⛦',color:'#9060a8',color2:'#c8a8d8',
+   keywords:['Tradición','Espiritualidad','Enseñanza','Convención'],
+   upright:'Un maestro, una tradición o una institución ofrece sabiduría valiosa. Hay algo sagrado en seguir un camino bien trazado por quienes vinieron antes. La espiritualidad organizada puede ser un puente hacia lo divino.',
+   reversed:'Dogma sofocante, hipocresía o ruptura necesaria con estructuras obsoletas. El espíritu supera a la letra de cualquier ley.'},
+  {id:6,  name:'Los Amantes',   arcana:'Arcano Mayor · VI',
+   symbol:'♡',color:'#e85880',color2:'#f8a8c0',
+   keywords:['Amor','Elección','Unión','Valores'],
+   upright:'Una decisión del corazón que define quién eres. No solo habla de romance — habla de alineación entre tus valores y tus acciones. El amor verdadero, sea de pareja o de vida, requiere elegir con claridad y coraje.',
+   reversed:'Decisiones apresuradas, desalineación entre lo que dices creer y cómo actúas. ¿A qué le dices sí cuando tu alma susurra no?'},
+  {id:7,  name:'El Carro',      arcana:'Arcano Mayor · VII',
+   symbol:'◈',color:'#5098c8',color2:'#98d0e8',
+   keywords:['Victoria','Determinación','Control','Progreso'],
+   upright:'La victoria está al alcance de quien mantiene las riendas de sus instintos contrarios. Avanza con determinación feroz. El universo premia a los que no paran aunque el camino sea cuesta arriba.',
+   reversed:'Falta de control, dirección perdida o uso de la fuerza donde se necesita la gracia. ¿Hacia dónde va este carro realmente?'},
+  {id:8,  name:'La Fuerza',     arcana:'Arcano Mayor · VIII',
+   symbol:'∞',color:'#d8901a',color2:'#f8c860',
+   keywords:['Valor','Paciencia','Compasión','Dominio interior'],
+   upright:'La verdadera fuerza no ruge — acaricia. Domar el animal interior con amor es más poderoso que la brutalidad. Tienes el coraje necesario para enfrentar lo que temes, y la gracia para hacerlo sin destruir.',
+   reversed:'Debilidad disfrazada de dureza, o fuerza bruta donde se necesita sutileza. El miedo que niegas te controla más que cualquier enemigo externo.'},
+  {id:9,  name:'El Ermitaño',   arcana:'Arcano Mayor · IX',
+   symbol:'⊙',color:'#a0a0a0',color2:'#d8d8d8',
+   keywords:['Soledad','Búsqueda interior','Sabiduría','Guía'],
+   upright:'Un retiro sagrado hacia el interior te espera. La respuesta no está en el ruido del mundo sino en el silencio donde tu voz más profunda puede finalmente ser escuchada. La soledad elegida es un regalo.',
+   reversed:'Aislamiento que ya no ilumina sino que oscurece. ¿Te retiras para crecer o para esconderte?'},
+  {id:10, name:'La Rueda',      arcana:'Arcano Mayor · X',
+   symbol:'⊛',color:'#8858a8',color2:'#c090d8',
+   keywords:['Destino','Cambio','Ciclos','Suerte'],
+   upright:'La gran rueda gira y lo que estaba abajo sube, lo que estaba arriba desciende. Un ciclo termina, uno nuevo comienza. Los cambios que llegan no son castigo ni premio — son simplemente el eterno movimiento del cosmos.',
+   reversed:'Resistencia al cambio necesario o sensación de estar atrapado en patrones repetitivos. ¿Qué ciclo viejo se niega a terminar?'},
+  {id:11, name:'La Justicia',   arcana:'Arcano Mayor · XI',
+   symbol:'⚖',color:'#5888a8',color2:'#98b8d0',
+   keywords:['Verdad','Equilibrio','Ley','Causa y efecto'],
+   upright:'La verdad saldrá a la luz y recibirás lo que corresponde. Es tiempo de sopesar las situaciones con honestidad implacable. La justicia del universo no se acelera ni se retrasa — llega exactamente cuando debe.',
+   reversed:'Injusticia, deshonestidad o negativa a asumir responsabilidad por las propias acciones. La balanza siempre encuentra su equilibrio.'},
+  {id:12, name:'El Colgado',    arcana:'Arcano Mayor · XII',
+   symbol:'⊥',color:'#4888a8',color2:'#80b8d0',
+   keywords:['Rendición','Perspectiva','Sacrificio','Pausa'],
+   upright:'El mayor acto de poder es saber cuándo soltar. Desde esta perspectiva invertida, el mundo se ve diferente y con esa diferencia viene la iluminación. Pausa, entrégate al proceso, y descubrirás que perder el control era precisamente el camino.',
+   reversed:'Martirio innecesario, sacrificio sin propósito o incapacidad de avanzar. ¿Por qué insistes en quedarte colgado cuando la cuerda está en tu mano?'},
+  {id:13, name:'La Muerte',     arcana:'Arcano Mayor · XIII',
+   symbol:'☽',color:'#303840',color2:'#7090a0',
+   keywords:['Transformación','Final','Renacimiento','Cambio'],
+   upright:'No temas este arcano — no habla de muerte física sino de transformaciones radicales e inevitables. Algo debe terminar para que algo nuevo pueda nacer. Suelta lo que ya cumplió su ciclo con gratitud y valentía.',
+   reversed:'Resistencia a lo inevitable, apego a lo que ya murió o incapacidad de dejar ir el pasado. El renacimiento espera al otro lado de tu rendición.'},
+  {id:14, name:'La Templanza',  arcana:'Arcano Mayor · XIV',
+   symbol:'△',color:'#5898a8',color2:'#a0d0d8',
+   keywords:['Equilibrio','Paciencia','Moderación','Propósito'],
+   upright:'El ángel mezcla las aguas de la emoción con el fuego de la acción, encontrando el punto exacto de alquimia personal. La paciencia no es pasividad — es la sabiduría de saber que cada cosa tiene su tiempo perfecto.',
+   reversed:'Impaciencia destructiva, excesos o desbalance entre distintas áreas de vida. ¿Qué partes de ti necesitan encontrarse en el centro?'},
+  {id:15, name:'El Diablo',     arcana:'Arcano Mayor · XV',
+   symbol:'⊕',color:'#602020',color2:'#a05040',
+   keywords:['Sombra','Adicción','Materialismo','Liberación'],
+   upright:'Las cadenas que ves son las que tú mismo te has puesto. El diablo no te atrapa — tú eliges quedarte. Observa sin juicio qué apegos, miedos o hábitos te mantienen pequeño, y descubrirás que la puerta siempre estuvo abierta.',
+   reversed:'Despertar, liberación de cadenas y reconocimiento del poder personal. La sombra reconocida pierde su poder.'},
+  {id:16, name:'La Torre',      arcana:'Arcano Mayor · XVI',
+   symbol:'⚡',color:'#c85818',color2:'#e8a060',
+   keywords:['Caos','Revelación','Cambio repentino','Destrucción creativa'],
+   upright:'El rayo golpea lo que se construyó sobre cimientos falsos. Aunque parezca caos, es liberación disfrazada. Lo que la torre derrumba necesitaba caer para que algo verdadero pueda construirse en su lugar.',
+   reversed:'Evitar el inevitable colapso solo aumenta su destructividad. ¿Qué estructura de tu vida ya es una ruina esperando caer?'},
+  {id:17, name:'La Estrella',   arcana:'Arcano Mayor · XVII',
+   symbol:'★',color:'#5878c8',color2:'#a0b8f0',
+   keywords:['Esperanza','Fe','Renovación','Serenidad'],
+   upright:'Después de la tormenta, la estrella guía al navegante a casa. Es tiempo de sanar, de confiar en que el universo conspira a tu favor, y de recordar que incluso en la oscuridad más profunda, siempre hay una luz que nunca se apaga.',
+   reversed:'Desesperanza, pérdida de fe o incapacidad de ver la luz al final del túnel. La estrella sigue ahí, solo hace falta mirar hacia arriba.'},
+  {id:18, name:'La Luna',       arcana:'Arcano Mayor · XVIII',
+   symbol:'☾',color:'#383060',color2:'#8890c8',
+   keywords:['Ilusión','Miedo','Subconsciente','Intuición'],
+   upright:'Las aguas profundas del inconsciente revelan monstruos que son sombras y sombras que son monstruos. Navega con cuidado en este territorio de ilusiones y presentimientos. Tu intuición conoce el camino aunque tu mente no lo vea.',
+   reversed:'Confusión disipándose, verdad emergiendo de la bruma. Los miedos que te paralizaban estaban magnificados por la oscuridad.'},
+  {id:19, name:'El Sol',        arcana:'Arcano Mayor · XIX',
+   symbol:'☀',color:'#d8a820',color2:'#f8e060',
+   keywords:['Alegría','Vitalidad','Éxito','Claridad'],
+   upright:'El sol sale sin pedir permiso e ilumina todo con generosa calidez. Es un momento de gozo genuino, claridad mental y éxito radiante. Permítete brillar sin disculpas, celebrar sin reservas y compartir tu luz sin miedo.',
+   reversed:'Optimismo superficial, energía bloqueada o incapacidad de permitirse la alegría. ¿Qué sombra cubre tu sol?'},
+  {id:20, name:'El Juicio',     arcana:'Arcano Mayor · XX',
+   symbol:'♪',color:'#7878c8',color2:'#b0b0e8',
+   keywords:['Renacimiento','Llamado','Absolución','Evaluación'],
+   upright:'Suena la trompeta del despertar y te llama a responder a tu destino más elevado. Es tiempo de revisar el pasado sin culpa, integrar las lecciones aprendidas y levantarte transformado. El juicio que importa es el tuyo propio.',
+   reversed:'Autocrítica destructiva, negativa a responder al llamado del alma. ¿Qué versión de ti espera ser liberada de este juicio interior?'},
+  {id:21, name:'El Mundo',      arcana:'Arcano Mayor · XXI',
+   symbol:'○',color:'#4888a8',color2:'#90c8d8',
+   keywords:['Completud','Integración','Logro','Viaje completo'],
+   upright:'Has llegado. No a un destino final, sino a la completud de este ciclo del eterno espiral de crecimiento. Celebra lo que has logrado, integra todo lo vivido, y prepárate para comenzar desde este nuevo y más elevado punto de partida.',
+   reversed:'Ciclo incompleto, sensación de estar cerca pero no llegar o resistencia a aceptar que algo ha terminado realmente.'},
+  // MINOR ARCANA — selected representatives
+  {id:22, name:'As de Copas',   arcana:'Copas · As',
+   symbol:'♡',color:'#5888c8',color2:'#98b8e8',
+   keywords:['Amor nuevo','Intuición','Abundancia emocional'],
+   upright:'Un nuevo comienzo emocional se abre ante ti como una flor que nunca has visto. El amor, en todas sus formas, fluye desde fuentes inesperadas. Tu corazón está listo para recibir.',
+   reversed:'Bloqueo emocional o amor no correspondido. El corazón cerrado no puede ni dar ni recibir.'},
+  {id:23, name:'Rey de Espadas',arcana:'Espadas · Rey',
+   symbol:'⚔',color:'#8898a8',color2:'#b8c8d8',
+   keywords:['Intelecto','Autoridad','Claridad','Decisión'],
+   upright:'La mente afilada como espada corta la confusión con precisión quirúrgica. Es tiempo de liderar con inteligencia, comunicar verdades difíciles y tomar decisiones basadas en hechos, no en miedos.',
+   reversed:'Mente tiránica, uso de la inteligencia para manipular o pensamiento frío sin corazón.'},
+  {id:24, name:'As de Pentáculos',arcana:'Pentáculos · As',
+   symbol:'◆',color:'#588858',color2:'#98c898',
+   keywords:['Prosperidad','Oportunidad material','Nuevos comienzos'],
+   upright:'Una semilla de prosperidad material espera ser plantada. Una oportunidad concreta, tangible y real aparece en el horizonte. La abundancia no es solo espiritual — también es física, y está llegando.',
+   reversed:'Oportunidad perdida o exceso de materialismo que oscurece los valores más profundos.'},
+  {id:25, name:'La Torre de Fuego',arcana:'Varitas · Diez',
+   symbol:'⟐',color:'#c87830',color2:'#e8b070',
+   keywords:['Carga','Responsabilidad','Determinación','Agotamiento'],
+   upright:'Cargas demasiado, pero el destino está cerca. El peso que llevas es el de compromisos que elegiste y que hablan de tu capacidad. Solo unos pasos más antes de poder soltar la carga.',
+   reversed:'Búsqueda de ayuda necesaria. Nadie puede cargar el mundo solo.'},
+];
+
+// SPREAD DEFINITIONS
+const SPREADS = {
+  1: [{label:'Tu carta del día', delay:0}],
+  3: [
+    {label:'Pasado',    delay:0},
+    {label:'Presente',  delay:200},
+    {label:'Futuro',    delay:400},
+  ],
+  5: [
+    {label:'El centro',   delay:0},
+    {label:'El reto',     delay:180},
+    {label:'La base',     delay:360},
+    {label:'El pasado',   delay:540},
+    {label:'El potencial',delay:720},
+  ],
+  7: [
+    {label:'Lun',delay:0},{label:'Mar',delay:120},{label:'Mié',delay:240},
+    {label:'Jue',delay:360},{label:'Vie',delay:480},{label:'Sáb',delay:600},{label:'Dom',delay:720},
+  ],
+};
+
+// ══════════════════════════════════════════════════════════
+// STARFIELD
+// ══════════════════════════════════════════════════════════
+(function(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<120;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*2.5+0.3;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;
+      --a:${0.2+Math.random()*0.7};--t:${2+Math.random()*5}s;animation-delay:${Math.random()*5}s;`;
+    c.appendChild(s);
+  }
+})();
+
+// ══════════════════════════════════════════════════════════
+// CARD DRAWING
+// ══════════════════════════════════════════════════════════
+function drawCard(canvas, card, reversed=false, size='normal'){
+  const W = size==='modal' ? 120 : (size==='small' ? 72 : 88);
+  const H = Math.round(W * 1.75);
+  canvas.width=W; canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  const r=8;
+
+  // Background gradient
+  const bg=ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#1a0830');bg.addColorStop(0.5,'#0e0520');bg.addColorStop(1,'#1a0830');
+  ctx.fillStyle=bg;
+  ctx.beginPath();ctx.roundRect(0,0,W,H,r);ctx.fill();
+
+  // Border
+  ctx.strokeStyle=card.color+'88';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.roundRect(1,1,W-2,H-2,r);ctx.stroke();
+
+  // Inner border
+  const pad=Math.floor(W*0.07);
+  ctx.strokeStyle=card.color+'44';ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.roundRect(pad,pad,W-pad*2,H-pad*2,r*0.6);ctx.stroke();
+
+  // Starfield on card
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  for(let i=0;i<30;i++){
+    const sx=((i*137.5+card.id*23)%1)*(W-pad*2)+pad;
+    const sy=((i*97.3+card.id*17)%1)*(H-pad*2)+pad;
+    const sr=((i*53)%1)*1.2+0.2;
+    ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();
+  }
+
+  // Symbol glow
+  const gx=W/2, gy=H*0.38;
+  const glow=ctx.createRadialGradient(gx,gy,0,gx,gy,W*0.35);
+  glow.addColorStop(0,card.color+'55');glow.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+
+  // Sacred geometry circle
+  ctx.strokeStyle=card.color+'44';ctx.lineWidth=0.7;
+  const circR=W*0.3;
+  ctx.beginPath();ctx.arc(gx,gy,circR,0,Math.PI*2);ctx.stroke();
+  // Inner geometry
+  const pts=card.id%7+3;
+  ctx.beginPath();
+  for(let i=0;i<=pts;i++){
+    const a=i*Math.PI*2/pts-Math.PI/2;
+    const x=gx+Math.cos(a)*circR*0.7, y=gy+Math.sin(a)*circR*0.7;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();ctx.strokeStyle=card.color+'33';ctx.stroke();
+
+  // Big symbol
+  const symSz=Math.floor(W*0.32);
+  ctx.font=`${symSz}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillStyle=card.color2;ctx.shadowColor=card.color;ctx.shadowBlur=W*0.15;
+  ctx.fillText(card.symbol,gx,gy);ctx.shadowBlur=0;
+
+  // Roman numeral / number
+  const numSz=Math.floor(W*0.11);
+  ctx.font=`600 ${numSz}px 'Cinzel',serif`;
+  ctx.fillStyle=card.color+'cc';ctx.textAlign='center';
+  ctx.fillText(card.id<=21?romanize(card.id):card.arcana.split('·')[1]?.trim()||'', gx, gy+circR+numSz*1.2);
+
+  // Name at bottom
+  const nameSz=Math.max(7,Math.floor(W*0.1));
+  ctx.font=`600 ${nameSz}px 'Cinzel',serif`;
+  ctx.fillStyle=card.color2+'cc';ctx.textAlign='center';
+  const words=card.name.split(' ');
+  if(words.length===1){
+    ctx.fillText(card.name,gx,H-pad-nameSz*0.3);
+  } else {
+    ctx.fillText(words[0],gx,H-pad-nameSz*1.1);
+    ctx.fillText(words.slice(1).join(' '),gx,H-pad+nameSz*0.2);
+  }
+
+  // Ornament top
+  ctx.font=`${Math.floor(W*0.09)}px serif`;
+  ctx.fillStyle=card.color+'88';ctx.textAlign='center';
+  ctx.fillText('✦ ✦ ✦',gx,pad+numSz*0.9);
+
+  // Reversed indicator
+  if(reversed){
+    ctx.font=`${Math.floor(W*0.09)}px serif`;
+    ctx.fillStyle='#c86080cc';ctx.textAlign='center';
+    ctx.fillText('↺ invertida',gx,H*0.52);
+  }
+}
+
+function romanize(n){
+  const map=['0','I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX','XXI'];
+  return map[n]||'';
+}
+
+// ══════════════════════════════════════════════════════════
+// READING GENERATOR — uses Claude API
+// ══════════════════════════════════════════════════════════
+async function generateReading(cards, positions, question, spread){
+  const cardList = cards.map((c,i)=>`${positions[i].label}: ${c.card.name} (Arcano: ${c.card.arcana})${c.reversed?' — INVERTIDA':''}`).join('\n');
+  const spreadName = {1:'carta única',3:'pasado-presente-futuro',5:'cruz celta',7:'semana completa'}[spread]||'tirada';
+
+  const prompt = `Eres un tarotista sabio, poético y profundo que habla español. El consultante hace una tirada de ${spreadName}.
+
+${question ? `Pregunta del consultante: "${question}"` : 'Tirada de reflexión sin pregunta específica.'}
+
+Cartas reveladas:
+${cardList}
+
+Por favor escribe una lectura en formato JSON con esta estructura exacta:
+{
+  "individual": [
+    {"position": "nombre posición", "message": "mensaje profundo y poético de 2-3 oraciones para esta carta en su posición específica"}
+  ],
+  "synthesis": "síntesis final de 3-4 oraciones que integra todas las cartas en un mensaje cohesivo y revelador"
+}
+
+La lectura debe ser:
+- Profunda, poética y evocadora
+- Personalizada a la pregunta y a la posición de cada carta
+- En tono de oráculo sabio y compasivo
+- Sin clichés vacíos
+- Las cartas invertidas tienen energía bloqueada o desafíos adicionales
+
+Responde SOLO con el JSON, sin texto adicional.`;
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      model:"claude-sonnet-4-20250514",
+      max_tokens:1000,
+      messages:[{role:"user",content:prompt}]
+    })
+  });
+  const data = await response.json();
+  const text = data.content?.[0]?.text||'{}';
+  try{
+    const clean=text.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  } catch {return null;}
+}
+
+// ══════════════════════════════════════════════════════════
+// MAIN LOGIC
+// ══════════════════════════════════════════════════════════
+let currentSpread = 1;
+let drawnCards = [];
+
+document.querySelectorAll('.spread-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.spread-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSpread=parseInt(btn.dataset.spread);
+    document.getElementById('stage').innerHTML='';
+    document.getElementById('reading').innerHTML='';
+    document.getElementById('synthesis').innerHTML='';
+  });
+});
+
+document.getElementById('shuffleBtn').addEventListener('click', async ()=>{
+  const question = document.getElementById('question').value.trim();
+  const positions = SPREADS[currentSpread];
+  const n = positions.length;
+
+  // Show loader
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('stage').innerHTML='';
+  document.getElementById('reading').innerHTML='';
+  document.getElementById('synthesis').innerHTML='';
+
+  // Shuffle and draw
+  const shuffled = [...CARDS].sort(()=>Math.random()-0.5);
+  drawnCards = shuffled.slice(0,n).map(card=>({
+    card, reversed: Math.random()<0.25
+  }));
+
+  // Hide loader after short pause (dramatic effect)
+  await new Promise(r=>setTimeout(r,1200));
+  document.getElementById('loader').classList.remove('show');
+
+  // Render cards
+  const stage = document.getElementById('stage');
+  drawnCards.forEach((drawn,i)=>{
+    const pos = positions[i];
+    const wrap = document.createElement('div');
+    wrap.className='card-wrap';
+    wrap.style.animationDelay = pos.delay+'ms';
+
+    const lbl = document.createElement('div');
+    lbl.className='card-pos-label';lbl.textContent=pos.label;
+
+    const cardEl=document.createElement('div');
+    cardEl.className='card'+(drawn.reversed?' reversed':'');
+
+    const cvs=document.createElement('canvas');
+    drawCard(cvs,drawn.card,drawn.reversed);
+    cardEl.appendChild(cvs);
+
+    const nameEl=document.createElement('div');
+    nameEl.className='card-name';nameEl.textContent=drawn.card.name;
+
+    wrap.appendChild(lbl);wrap.appendChild(cardEl);wrap.appendChild(nameEl);
+    if(drawn.reversed){
+      const rev=document.createElement('div');rev.className='card-rev-tag';
+      rev.textContent='↺ invertida';wrap.appendChild(rev);
+    }
+
+    // Click to expand
+    cardEl.addEventListener('click',()=>openModal(drawn));
+    stage.appendChild(wrap);
+  });
+
+  // Generate AI reading
+  try {
+    const reading = await generateReading(drawnCards, positions, question, currentSpread);
+    if(reading){
+      // Individual card readings
+      const readingEl = document.getElementById('reading');
+      drawnCards.forEach((drawn,i)=>{
+        const msg = reading.individual?.[i]?.message || (drawn.reversed ? drawn.card.reversed : drawn.card.upright);
+        const pos = positions[i];
+        const card = document.createElement('div');
+        card.className='reading-card';
+        card.style.animationDelay=(i*100)+'ms';
+        card.innerHTML=`
+          <div class="rc-header">
+            <div class="rc-num">${i+1}</div>
+            <div>
+              <div class="rc-title">${drawn.card.name}</div>
+              <div class="rc-sub">${pos.label} · ${drawn.card.arcana}${drawn.reversed?' · Invertida':''}</div>
+            </div>
+          </div>
+          <div class="rc-text">${msg}</div>`;
+        readingEl.appendChild(card);
+      });
+
+      // Synthesis
+      if(reading.synthesis){
+        const synthEl=document.getElementById('synthesis');
+        synthEl.innerHTML=`
+          <div class="synth-box">
+            <div class="synth-title">✦ MENSAJE DEL ORÁCULO ✦</div>
+            <div class="synth-text">${reading.synthesis}</div>
+          </div>`;
+      }
+    } else {
+      // Fallback: use card's own text
+      fallbackReading(drawnCards, positions);
+    }
+  } catch {
+    fallbackReading(drawnCards, positions);
+  }
+});
+
+function fallbackReading(drawn, positions){
+  const readingEl=document.getElementById('reading');
+  drawn.forEach((d,i)=>{
+    const card=document.createElement('div');card.className='reading-card';
+    card.style.animationDelay=(i*100)+'ms';
+    card.innerHTML=`
+      <div class="rc-header">
+        <div class="rc-num">${i+1}</div>
+        <div>
+          <div class="rc-title">${d.card.name}</div>
+          <div class="rc-sub">${positions[i].label} · ${d.card.arcana}${d.reversed?' · Invertida':''}</div>
+        </div>
+      </div>
+      <div class="rc-text">${d.reversed?d.card.reversed:d.card.upright}</div>`;
+    readingEl.appendChild(card);
+  });
+}
+
+// ── MODAL ──────────────────────────────────────────────────
+function openModal(drawn){
+  const c=drawn.card,rev=drawn.reversed;
+  const modal=document.getElementById('modal');
+  const cvs=document.getElementById('modal-card-img');
+  drawCard(cvs,c,rev,'modal');
+  document.getElementById('modal-name').textContent=c.name+(rev?' (Invertida)':'');
+  document.getElementById('modal-arcana').textContent=c.arcana;
+  const kw=document.getElementById('modal-keywords');kw.innerHTML='';
+  c.keywords.forEach(k=>{const d=document.createElement('div');d.className='mkw';d.textContent=k;kw.appendChild(d);});
+  document.getElementById('modal-meaning').textContent=rev?c.reversed:c.upright;
+  modal.classList.add('show');
+}
+document.getElementById('modal-close').addEventListener('click',()=>{
+  document.getElementById('modal').classList.remove('show');
+});
+document.getElementById('modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('show');
+});
+</script>
+</body>
+</html>
