@@ -1,0 +1,2 @@
+# tarot
+preguntele preguntele
